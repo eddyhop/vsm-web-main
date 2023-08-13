@@ -1,0 +1,12 @@
+version: '3.5'
+services:
+
+  vsm-web:
+    container_name: vsm-web
+    hostname: vsm-web
+    image: docker.netlinkz.dev/vsm-web:main_latest
+    working_dir: /app
+    restart: always
+    ports:
+        - '8080:80'
+

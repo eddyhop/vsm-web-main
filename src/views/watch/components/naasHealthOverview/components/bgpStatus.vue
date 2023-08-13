@@ -1,0 +1,256 @@
+<template>
+  <div class="logical">
+    <!-- <div class="operate">
+      <button class="add" v-control @click="refresh()">
+        {{$t('Monit.refresh')}}
+      </button>
+    </div> -->
+    <!-- 物理端口-->
+    <div class="tableView">
+      <el-table
+        ref="multipleTable"
+        :data="tableData"
+        tooltip-effect="dark"
+        style="width: 100%"
+        @selection-change="handleSelectionChange"
+        border
+        stripe
+        fit
+        size="small"
+      >
+        <el-table-column
+          prop="neighbours"
+          :label="$t('Monit.neighbors')"
+          show-overflow-tooltip
+          :resizable="false"
+        ></el-table-column>
+        <el-table-column
+          prop="routerAs"
+          :label="$t('Monit.routerAS')"
+          show-overflow-tooltip
+          :resizable="false"
+        ></el-table-column>
+        <el-table-column
+          prop="routerId"
+          :label="$t('Monit.routerID')"
+          show-overflow-tooltip
+          :resizable="false"
+        ></el-table-column>
+        <el-table-column
+          prop="state"
+          :label="$t('Monit.state')"
+          show-overflow-tooltip
+          :resizable="false"
+        ></el-table-column>
+        <el-table-column
+          prop="since"
+          :label="$t('Monit.since')"
+          show-overflow-tooltip
+          :resizable="false"
+        ></el-table-column>
+      </el-table>
+      <div class="page">
+        <el-pagination
+          :page-sizes="[5, 10]"
+          :total="totalNum"
+          @size-change="sizeChange"
+          @current-change="pageChange"
+          :current-page="page"
+          :page-size="5"
+          layout="total, sizes, prev, next, jumper"
+          style="font-family: arial, sans-serif"
+        ></el-pagination>
+      </div>
+    </div>
+  </div>
+</template>
+<script>
+import {
+  getPhysicalPort,
+  getNaaSBGPInfo,
+  getLogicalPortByTts,
+  repairtoolsSendReairMessageNew,
+} from "@/services/index";
+export default {
+  props: {},
+  components: {},
+  data() {
+    return {
+      opreationalState: undefined,
+      opreationalStateList: [
+        {
+          name: "UP",
+          id: "UP",
+        },
+        {
+          name: "DOWN",
+          id: "DOWN",
+        },
+      ],
+      configuredState: undefined,
+      configuredStateList: [
+        {
+          name: "UP",
+          id: "UP",
+        },
+        {
+          name: "DOWN",
+          id: "DOWN",
+        },
+      ],
+      statisticsType: undefined,
+      statisticsName: undefined,
+      // deviceSerialNumber:JSON.parse(this.$route.query.devData).vsrSeries,
+      allNum: 0, //数据总条数 Total number of data bars
+      // Total number of data bars
+      lNumber: 1, //当前页数, The current number of pages
+      // The current number of pages
+      Size: 10,
+      totalNum: 0,
+      page: 1,
+      pageSize: 5,
+      tableData: [],
+      tableData1: [],
+      multipleSelection: [],
+      deviceId: this.$parent.edgeName,
+      tenantId: "",
+      level: "",
+    };
+  },
+  computed: {},
+  methods: {
+    //表格序号 Form the serial number
+    // Form the serial number
+    indexMethod(index) {
+      return (
+        index + 1 + (this.lNumber == 1 ? 0 : this.Size * (this.lNumber - 1))
+      );
+    },
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+    },
+    sizeChange(val) {
+      //页数总条目改变 Total page entries change
+      // Total page entries change Total Page Entries Change
+      this.Size = val;
+      this.lNumber = 1;
+      this.getList();
+    },
+    pageChange(val) {
+      //页数改变 Page number change
+      // Page change Page Number change
+      // console.log(val)
+      this.lNumber = val;
+      this.getList();
+    },
+    physicalPortInit() {
+      this.deviceId = this.$parent.edgeName;
+      let params = {
+        deviceId: JSON.parse(this.$route.query.devData).deviceId,
+        level: "2",
+        pageSize: this.pageSize,
+        page: this.page,
+      };
+      getNaaSBGPInfo(params).then((res) => {
+        this.totalNum = res.result.totalElements;
+        this.tableData = res.result.content;
+      });
+    },
+
+  },
+  created() {
+    this.tenantId = sessionStorage.getItem("tenantValue");
+    this.physicalPortInit();
+  },
+  mounted() {
+    this.timer = setInterval(() => {
+      this.physicalPortInit();
+    }, 1000 * 600);
+  },
+};
+</script>
+<style lang="scss">
+.logical {
+  .el-table th {
+    text-align: center;
+  }
+  .el-table td {
+    text-align: center;
+  }
+}
+</style>
+<style scoped lang="scss">
+.logical {
+  padding: 20px 30px 0 30px;
+}
+.operate {
+  zoom: 1;
+  &:after {
+    display: block;
+    clear: both;
+    content: "";
+    visibility: hidden;
+    height: 0;
+  }
+  .add:hover {
+    background: #6095d6;
+  }
+  button {
+    float: right;
+    width: 100px;
+    height: 34px;
+    background: rgba(54, 120, 200, 1);
+    border-radius: 7px;
+    font-size: 14px;
+    font-family: arial, sans-serif;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 1);
+    border: none;
+    outline: none;
+    cursor: pointer;
+    display: table-cell;
+    vertical-align: middle;
+    img {
+      width: 14px;
+      height: 14px;
+      position: relative;
+      top: 1px;
+    }
+  }
+  .flBut {
+    padding: 0 15px;
+    &.onBut {
+      background: rgba(54, 120, 200, 1);
+      color: #ffffff;
+    }
+    width: auto;
+    float: left;
+    background: rgba(239, 239, 239, 1);
+    color: #333333;
+    border: 1px solid rgba(209, 215, 224, 1);
+    margin-right: 20px;
+    &:hover {
+      background: #6095d6;
+      color: #ffffff;
+    }
+  }
+  .close {
+    float: right;
+    background: rgba(239, 239, 239, 1);
+    color: #333333;
+    border: 1px solid rgba(209, 215, 224, 1);
+    margin-left: 23px;
+  }
+}
+.tableView {
+  padding-top: 20px;
+  .edit {
+    font-size: 11px;
+    font-family: arial, sans-serif;
+    font-weight: 400;
+    color: rgba(54, 120, 200, 1);
+    border: none;
+    background: none;
+  }
+}
+</style>

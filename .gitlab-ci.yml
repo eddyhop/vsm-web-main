@@ -1,0 +1,7 @@
+include:
+    - project: 'netlinkz/vsn-devops/gitlab-ci'
+      file: '/templates/vsm-web.yml'
+
+variables:
+  IMAGE_NAME: vsm-web
+
